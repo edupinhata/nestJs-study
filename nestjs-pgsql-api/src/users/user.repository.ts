@@ -1,4 +1,4 @@
-import { EntityRepository, Repository } from 'typeorm';
+import { Connection, EntityRepository, Repository } from 'typeorm';
 import { CreateUserDto } from "./dtos/create-user.dto";
 import { User } from './user.entity';
 import { UserRole } from './user-roles.enum';
@@ -9,14 +9,19 @@ import {
     InternalServerErrorException,
 } from '@nestjs/common';
 
+/*
+* REPOSITORIES are classes or components that 
+* encapsulate the logic required to access data sources.
+*/
+
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
+
     async createUser(
-        createUserDto = CreateUserDto,
-        role: UserRole,
+        createUserDto: CreateUserDto,
+        role: UserRole
     ): Promise<User> {
-        const { email, name, password }  = createUserDto.arguments;
-        console.log(`=== [EDU]: createUserDto: ${JSON.stringify(createUserDto)}`);
+        const { email, name, password }  = createUserDto;
 
         const user = this.create();
         user.email = email;
@@ -42,9 +47,13 @@ export class UserRepository extends Repository<User> {
         }
     }
 
-
     private async hashPassword(password: string, salt: string): Promise<string> {
         return bcrypt.hash(password, salt);
     }
-    
+}
+
+export const UserRepositoryProvider = {
+    provide: 'UserRepository',
+    useFactory: (connection: Connection) => connection.getCustomRepository(UserRepository),
+    inject: [Connection]
 }
